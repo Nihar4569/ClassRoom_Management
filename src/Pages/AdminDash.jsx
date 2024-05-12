@@ -60,6 +60,7 @@ export default function AdminDash() {
                         <Tr>
                             <Th>Name</Th>
                             <Th>ID</Th>
+                            <Th>ID Proof</Th>
                             <Th>Access</Th>
                             <Th>Action</Th>
                         </Tr>
@@ -68,6 +69,7 @@ export default function AdminDash() {
                         {teacherList.map((item) => (
                             <Tr key={item.id}>
                                 <Td>{item.name}</Td>
+                                <Td>{item.id}</Td>
                                 <Td>
                                     <a href={item.idUrl} target="_blank" rel="noopener noreferrer">
                                         <Image src={item.idUrl} />
