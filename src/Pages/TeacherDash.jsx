@@ -65,6 +65,9 @@ export default function TeacherDash() {
   if (!teacherData) {
     navigate("/")
   }
+  if(!teacherData.access){
+    navigate("/")
+  }
   return (
     <Box>
       <Header />
