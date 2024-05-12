@@ -41,22 +41,18 @@ export default function Student() {
         e.preventDefault();
         try {
             const studentsDoc = await getDoc(doc(db, 'STUDENTS', regd));
-            const semDoc = await getDoc(doc(db, `${semester}+${sectionn}`, `${semester}+${sectionn}`))
-            if (!semDoc.exists()) {
-                await addDoc(collection(db, `${semester}+${sectionn}`), {});
-                toast.success("Class Room Created")
-            }
             if (studentsDoc.exists()) {
                 toast.error("Student Already Exists");
             } else {
                 await setDoc(doc(db, 'STUDENTS', regd), {
+                    uid:regd,
                     name: name,
                     regd: regd,
                     email: email,
                     password: password,
                     semester: semester, // Include semester in the document data
-                    section: sectionn.trim().toUpperCase(),
-                    roomid: `${semester}+${sectionn}`
+                    section: sectionn,
+                    classroomid: `${semester}+${sectionn}`
                 });
                 toast.success("Registration Successful");
                 // Clear form fields after successful registration
@@ -154,8 +150,8 @@ export default function Student() {
                                         ))}
                                     </MenuList>
                                 </Menu>
-                                <Input value={sectionn.toUpperCase()}
-                                    onChange={(e) => setSectionn(e.target.value)}
+                                <Input value={sectionn}
+                                    onChange={(e) => setSectionn(e.target.value.toUpperCase())}
                                     placeholder='Section'
                                     type='text'
                                     maxLength={1} // Set maximum length to 1 character

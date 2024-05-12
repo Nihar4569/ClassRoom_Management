@@ -49,6 +49,7 @@ export default function Teacher() {
             if(!teacherDoc.exists()){
                 await idupload(teacherIdFile)
             await setDoc(doc(db, 'TEACHERS', emid), {
+                uid:emid,
                 name: teacherName,
                 emid: emid,
                 idUrl: idurl,

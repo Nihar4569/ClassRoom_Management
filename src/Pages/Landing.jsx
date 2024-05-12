@@ -1,25 +1,35 @@
 import { Box, Button, Container, Text, VStack } from '@chakra-ui/react'
 import { motion } from 'framer-motion';
-import React from 'react'
+import React, { useContext } from 'react'
 import { useNavigate } from 'react-router-dom';
 import Header from '../Components/Header';
+import { Context } from '..';
+import toast from 'react-hot-toast';
 
-export default function TS() {
+export default function Landing() {
+    const {tAuthenticated,sAuthenticated,teacherData,studentData} = useContext(Context);
     const navigate = useNavigate();
 
     const studentHandler = (e)=>{
         e.preventDefault();
-        navigate('/teacher');
+        navigate('/student');
     }
     
     const teacherHandler = (e)=>{
         e.preventDefault();
-        navigate('/student');
+        navigate('/teacher');
     }
-
+    if(teacherData){
+        navigate("/teacherdash")
+    }
+    if(studentData){
+        navigate("/studentdash")
+    }
     return (
         <Box>
-            <Header/>
+            <VStack p="2vh" backgroundColor="blue.400">
+                <Text color="white" fontSize="20px" fontWeight="bold">Join your ClassRoom</Text>
+            </VStack>
 
             <Container>
                 <motion.div whileHover={{ scale: 1.1 }} transition={{ duration: 0.3 }}>
@@ -35,6 +45,11 @@ export default function TS() {
                         <Text color={"white"} fontWeight={"bold"} fontSize={"30px"}>Teacher Login</Text>
                         <br />
                         <Button _hover={{ backgroundColor: "blue.500", color: "white" }} onClick={teacherHandler}>Login/SignUp</Button>
+                    </VStack>
+                </motion.div>
+                <motion.div whileHover={{ scale: 1.1 }} transition={{ duration: 0.3 }} >
+                    <VStack onClick={()=> navigate("/admin")} m={"5vh"} p={"10vh"} borderRadius={"5vh"} backgroundColor={"blue.300"}_hover={{bg:"red"}}>
+                        <Text color={"white"} fontWeight={"bold"} fontSize={"30px"}>Super Admin</Text>
                     </VStack>
                 </motion.div>
             </Container>

@@ -10,6 +10,10 @@ const AppWrapper = ()=>{
   const [name, setName] = useState("");
   const [studentData,setStudentData] = useState("")
   const [teacherData,setTeacherData] = useState("")
+  const [chatid,setChatid] = useState("");
+  const [tAuthenticated,setTAuthenticated] = useState("");
+  const [sAuthenticated,setSAuthenticated] = useState("");
+  const [chatId,setChatId] = useState("")
 
   return(
     <Context.Provider value={{ 
@@ -18,7 +22,15 @@ const AppWrapper = ()=>{
       studentData,
       setStudentData,
       teacherData,
-      setTeacherData
+      setTeacherData,
+      chatid,
+      setChatid,
+      tAuthenticated,
+      setTAuthenticated,
+      sAuthenticated,
+      setSAuthenticated,
+      chatId,
+      setChatId
     }}>
       <ChakraProvider>
         <App/>
