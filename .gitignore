@@ -4,8 +4,9 @@
 /node_modules
 /.pnp
 .pnp.js
+
+# environment files
 .env
-package.json
 
 # testing
 /coverage

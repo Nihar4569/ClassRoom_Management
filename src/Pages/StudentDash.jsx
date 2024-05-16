@@ -51,9 +51,9 @@ export default function StudentDash() {
       <Header />
       <Container h="calc(100vh - 8.3vh)" bg="white">
         {subjectsList.map((item) => (
-          <VStack spacing={4}>
-            <Button onClick={() => setChatId(`${studentData.semester}+${studentData.section}+${item.id}`)} key={item.id}>{item.id}</Button>
-          </VStack>
+          <VStack key={item.id} spacing={4}>
+          <Button onClick={() => { setChatId(`${studentData.semester}+${studentData.section}+${item.id}`); navigate("/lobby"); }} key={item.id}>{item.id}</Button>
+        </VStack>
         ))}
       </Container>
     </Box>

@@ -22,7 +22,6 @@ export default function TeacherDash() {
   const [section, setSection] = useState("");
   const [subject, setSubject] = useState("");
   const navigate = useNavigate();
-  console.log(`tAuthenticated ${tAuthenticated}`);
 
 
   const classHandler = async (e) => {
@@ -39,7 +38,7 @@ export default function TeacherDash() {
         toast.success("Room created")
       }
       toast.success(`Welcome to ${section} ${subject}`);
-      navigate("/classroom")
+      navigate("/lobby")
     } catch (error) {
       toast.error(error.message);
     }

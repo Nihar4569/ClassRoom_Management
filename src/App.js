@@ -12,13 +12,16 @@ import Teacher from "./Pages/Teacher";
 import Studentlogin from "./Pages/Landing";
 import Student from "./Pages/Student";
 import TeacherDash from "./Pages/TeacherDash";
-import Classroom from "./Pages/Tclassroom";
+import Classroom from "./Pages/Classroom";
 import Admin from "./Pages/Admin";
 import AdminDash from "./Pages/AdminDash";
+import Lobby from "./Pages/Lobby";
+import Screen from "./Pages/Screen";
+import Landing from "./Pages/Landing";
 
 function App() {
   const {studentData,setStudentData,teacherData,setTeacherData,tAuthenticated,
-    setTAuthenticated,sAuthenticated,setSAuthenticated} = useContext(Context)
+    setTAuthenticated,sAuthenticated,setSAuthenticated,setLoader} = useContext(Context)
   //cookie
   const [cookies, setCookie, removeCookie] = useCookies(['stoken', 'ttoken']);
 
@@ -31,6 +34,7 @@ function App() {
     const fetchData = async () => {
         try {
             if(cookies.stoken){
+              setLoader(true)
               const key = String(cookies.stoken);
               const studentDoc = await getDoc(doc(db, 'STUDENTS', key));
                 if (studentDoc.exists()) {
@@ -39,13 +43,16 @@ function App() {
                     setSAuthenticated(true);
                     console.log(studentData);
                     toast.success("navigate to student")
+
             } else {
                 setStudentData("");
                 toast.error("stoken not found.");
             }
+            setLoader(false)
             }
             else{
               const key = String(cookies.ttoken);
+              setLoader(true)
               const teacherDoc = await getDoc(doc(db, 'TEACHERS', key));
                 if (teacherDoc.exists()) {
                     const teacherdata = teacherDoc.data(); // Directly use studentDoc.data() here
@@ -56,13 +63,14 @@ function App() {
             } else {
                 toast.error("ttoken not found.");
             }
+            setLoader(false)
             }
         } catch (error) {
             toast.error(error.message);
         }
     };
     fetchData(); // Call fetchData inside useEffect
-}, []);
+}, [db]);
 
 
   return (
@@ -70,7 +78,7 @@ function App() {
       <Router>
       <Routes>
         {/* <Route path="/chat" element={<Chat/>}/> */}
-        <Route path="/" element={<TS/>}/>
+        <Route path="/" element={<Landing/>}/>
         <Route path="/teacher" element={<Teacher/>}/>
         <Route path="/student" element={<Student/>}/>
         <Route path="/studentdash" element={<StudentDash/>}/>
@@ -79,6 +87,8 @@ function App() {
         <Route path="/classroom" element={<Classroom/>}/>
         <Route path="/admin" element={<Admin/>}/>
         <Route path="/admindash" element={<AdminDash/>}/>
+        <Route path="/screen" element={<Screen/>}/>
+        <Route path="/lobby" element={<Lobby/>}/>
       </Routes>
       <Toaster/>
     </Router>

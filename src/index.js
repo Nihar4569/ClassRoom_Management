@@ -14,6 +14,7 @@ const AppWrapper = ()=>{
   const [tAuthenticated,setTAuthenticated] = useState("");
   const [sAuthenticated,setSAuthenticated] = useState("");
   const [chatId,setChatId] = useState("")
+  const [loader,setLoader] = useState(false)
 
   return(
     <Context.Provider value={{ 
@@ -30,7 +31,9 @@ const AppWrapper = ()=>{
       sAuthenticated,
       setSAuthenticated,
       chatId,
-      setChatId
+      setChatId,
+      loader,
+      setLoader
     }}>
       <ChakraProvider>
         <App/>
