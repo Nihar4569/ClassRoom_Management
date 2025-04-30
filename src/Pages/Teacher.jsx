@@ -81,11 +81,12 @@ export default function Teacher() {
   const auth = getAuth(app);
   const db = getFirestore(app);
   
-  // Theme colors
+  // Theme colors - Move all useColorModeValue calls to the top level
   const bgColor = useColorModeValue('gray.50', 'gray.900');
   const activeCardBg = useColorModeValue('blue.50', 'blue.900');
   const inactiveCardBg = useColorModeValue('gray.50', 'gray.700');
   const inputBg = useColorModeValue('white', 'gray.700');
+  const textColor = useColorModeValue('gray.600', 'gray.400');
   
   const toggleForm = () => {
     setIsLogin(!isLogin);
@@ -339,7 +340,7 @@ export default function Teacher() {
             >
               Teacher Portal
             </Heading>
-            <Text fontSize="lg" color={useColorModeValue('gray.600', 'gray.400')}>
+            <Text fontSize="lg" color={textColor}>
               {isLogin ? "Sign in to access your classrooms" : "Create a new teacher account"}
             </Text>
           </MotionBox>
@@ -517,7 +518,7 @@ export default function Teacher() {
                     
                     <HStack mt={2}>
                       <InfoIcon color="green.500" />
-                      <Text fontSize="sm" color={useColorModeValue('gray.600', 'gray.400')}>
+                      <Text fontSize="sm" color={textColor}>
                         Your account will require admin approval before first login
                       </Text>
                     </HStack>
@@ -563,7 +564,7 @@ export default function Teacher() {
                   {isLogin ? "Create an Account" : "Sign In Instead"}
                 </Heading>
                 
-                <Text color={useColorModeValue('gray.600', 'gray.400')}>
+                <Text color={textColor}>
                   {isLogin
                     ? "Sign up to create your teacher profile, manage classes, and engage with students."
                     : "Already have an account? Sign in to continue managing your classes."}

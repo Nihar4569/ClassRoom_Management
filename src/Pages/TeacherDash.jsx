@@ -81,12 +81,15 @@ export default function TeacherDash() {
   // Modal disclosure
   const { isOpen, onOpen, onClose } = useDisclosure();
   
-  // Theme colors
+  // Theme colors - move all useColorModeValue calls to the top level
   const bgColor = useColorModeValue('gray.50', 'gray.900');
   const cardBg = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
   const hoverBg = useColorModeValue('green.50', 'green.900');
   const highlightColor = useColorModeValue('green.500', 'green.300');
+  const textColor = useColorModeValue('gray.600', 'gray.400');
+  const cardHeaderBg = useColorModeValue('green.50', 'green.900');
+  const cardFooterBg = useColorModeValue('gray.50', 'gray.700');
   
   // Fetch teacher's classes
   useEffect(() => {
@@ -312,6 +315,111 @@ export default function TeacherDash() {
     return null;
   }
   
+  // Custom class card component to avoid Hook rules violations
+  const ClassCard = ({ classItem, onDeleteClick, onCardClick }) => (
+    <MotionCard
+      variants={cardVariants}
+      whileHover="hover"
+      bg={cardBg}
+      borderWidth="1px"
+      borderColor={borderColor}
+      borderRadius="xl"
+      overflow="hidden"
+      cursor="pointer"
+      onClick={onCardClick}
+      h="100%"
+    >
+      <CardHeader bg={cardHeaderBg} p={4}>
+        <Flex justify="space-between" align="center">
+          <Heading size="md">
+            {classItem.subject}
+          </Heading>
+          <IconButton
+            icon={<DeleteIcon />}
+            variant="ghost"
+            colorScheme="red"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDeleteClick(classItem);
+            }}
+            aria-label="Delete class"
+          />
+        </Flex>
+      </CardHeader>
+      
+      <CardBody py={4}>
+        <VStack align="start" spacing={2}>
+          <HStack>
+            <FaRegCalendarAlt color="currentColor" />
+            <Text>
+              Semester {classItem.semester.replace('semester', '')}
+            </Text>
+          </HStack>
+          
+          <HStack>
+            <FaUserGraduate color="currentColor" />
+            <Text>
+              Section {classItem.section}
+            </Text>
+          </HStack>
+        </VStack>
+      </CardBody>
+      
+      <CardFooter 
+        bg={cardFooterBg}
+        borderTopWidth="1px"
+        borderColor={borderColor}
+        p={3}
+      >
+        <Button 
+          colorScheme="green" 
+          size="sm" 
+          width="full"
+          leftIcon={<FaBook />}
+        >
+          Enter Classroom
+        </Button>
+      </CardFooter>
+    </MotionCard>
+  );
+  
+  // Empty state component
+  const EmptyState = () => (
+    <MotionBox 
+      variants={itemVariants}
+      bg={cardBg}
+      p={8}
+      borderRadius="xl"
+      boxShadow="md"
+      borderWidth="1px"
+      borderColor={borderColor}
+      textAlign="center"
+    >
+      <VStack spacing={4}>
+        <FaChalkboardTeacher size={50} color="currentColor" />
+        <Heading size="md">No Classes Yet</Heading>
+        <Text color={textColor}>
+          Create your first class using the form on the left
+        </Text>
+        <ModernButton
+          colorScheme="green"
+          leftIcon={<AddIcon />}
+          size="md"
+          onClick={() => {
+            // Scroll to create form on mobile or focus on semester field
+            const semesterSelect = document.getElementById('semester-select');
+            if (semesterSelect) {
+              semesterSelect.focus();
+            }
+          }}
+        >
+          Create Your First Class
+        </ModernButton>
+      </VStack>
+    </MotionBox>
+  );
+  
   return (
     <Box minH="100vh" bg={bgColor}>
       <ModernHeader />
@@ -349,13 +457,13 @@ export default function TeacherDash() {
                 
                 <VStack align="flex-start" w="full" spacing={1}>
                   <Text fontWeight="bold" fontSize="xl">{teacherData.name}</Text>
-                  <Text color={useColorModeValue('gray.600', 'gray.400')}>Employee ID: {teacherData.emid}</Text>
+                  <Text color={textColor}>Employee ID: {teacherData.emid}</Text>
                 </VStack>
                 
                 <Divider />
                 
                 <VStack align="stretch" w="full" spacing={1}>
-                  <Text fontWeight="bold" fontSize="sm" color={useColorModeValue('gray.600', 'gray.400')}>
+                  <Text fontWeight="bold" fontSize="sm" color={textColor}>
                     CLASSES
                   </Text>
                   <Text fontSize="2xl" fontWeight="bold">{classes.length}</Text>
@@ -386,6 +494,7 @@ export default function TeacherDash() {
                       variant="outline"
                       textAlign="left"
                       colorScheme="green"
+                      id="semester-select"
                     >
                       {semester ? `Semester ${semester.replace('semester', '')}` : 'Select Semester'}
                     </MenuButton>
@@ -451,114 +560,25 @@ export default function TeacherDash() {
               >
                 Your Classes
               </Heading>
-              <Text color={useColorModeValue('gray.600', 'gray.400')}>
+              <Text color={textColor}>
                 Manage all your active classroom sessions
               </Text>
             </Box>
             
             {classes.length === 0 ? (
-              <MotionBox 
-                variants={itemVariants}
-                bg={cardBg}
-                p={8}
-                borderRadius="xl"
-                boxShadow="md"
-                borderWidth="1px"
-                borderColor={borderColor}
-                textAlign="center"
-              >
-                <VStack spacing={4}>
-                  <FaChalkboardTeacher size={50} color={useColorModeValue('#38A169', '#9AE6B4')} />
-                  <Heading size="md">No Classes Yet</Heading>
-                  <Text color={useColorModeValue('gray.600', 'gray.400')}>
-                    Create your first class using the form on the left
-                  </Text>
-                  <ModernButton
-                    colorScheme="green"
-                    leftIcon={<AddIcon />}
-                    size="md"
-                    onClick={() => {
-                      // Scroll to create form on mobile or focus on semester field
-                      const semesterSelect = document.getElementById('semester-select');
-                      if (semesterSelect) {
-                        semesterSelect.focus();
-                      }
-                    }}
-                  >
-                    Create Your First Class
-                  </ModernButton>
-                </VStack>
-              </MotionBox>
+              <EmptyState />
             ) : (
               <SimpleGrid columns={{ base: 1, md: 2, xl: 3 }} spacing={6}>
-                {classes.map((classItem, index) => (
-                  <MotionCard
+                {classes.map((classItem) => (
+                  <ClassCard 
                     key={classItem.chatId}
-                    variants={cardVariants}
-                    whileHover="hover"
-                    bg={cardBg}
-                    borderWidth="1px"
-                    borderColor={borderColor}
-                    borderRadius="xl"
-                    overflow="hidden"
-                    cursor="pointer"
-                    onClick={() => enterClass(classItem)}
-                    h="100%"
-                  >
-                    <CardHeader bg={useColorModeValue('green.50', 'green.900')} p={4}>
-                      <Flex justify="space-between" align="center">
-                        <Heading size="md">
-                          {classItem.subject}
-                        </Heading>
-                        <IconButton
-                          icon={<DeleteIcon />}
-                          variant="ghost"
-                          colorScheme="red"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedClass(classItem);
-                            onOpen();
-                          }}
-                          aria-label="Delete class"
-                        />
-                      </Flex>
-                    </CardHeader>
-                    
-                    <CardBody py={4}>
-                      <VStack align="start" spacing={2}>
-                        <HStack>
-                          <FaRegCalendarAlt color={useColorModeValue('#38A169', '#9AE6B4')} />
-                          <Text>
-                            Semester {classItem.semester.replace('semester', '')}
-                          </Text>
-                        </HStack>
-                        
-                        <HStack>
-                          <FaUserGraduate color={useColorModeValue('#38A169', '#9AE6B4')} />
-                          <Text>
-                            Section {classItem.section}
-                          </Text>
-                        </HStack>
-                      </VStack>
-                    </CardBody>
-                    
-                    <CardFooter 
-                      bg={useColorModeValue('gray.50', 'gray.700')} 
-                      borderTopWidth="1px"
-                      borderColor={borderColor}
-                      p={3}
-                    >
-                      <Button 
-                        colorScheme="green" 
-                        size="sm" 
-                        width="full"
-                        leftIcon={<FaBook />}
-                      >
-                        Enter Classroom
-                      </Button>
-                    </CardFooter>
-                  </MotionCard>
+                    classItem={classItem}
+                    onDeleteClick={(item) => {
+                      setSelectedClass(item);
+                      onOpen();
+                    }}
+                    onCardClick={() => enterClass(classItem)}
+                  />
                 ))}
               </SimpleGrid>
             )}

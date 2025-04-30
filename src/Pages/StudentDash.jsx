@@ -53,12 +53,14 @@ export default function StudentDash() {
   const toast = useToast();
   const db = getFirestore(app);
   
-  // Theme colors
+  // Theme colors - move all useColorModeValue calls to the top level
   const bgColor = useColorModeValue('gray.50', 'gray.900');
   const cardBg = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
   const highlightColor = useColorModeValue('blue.500', 'blue.300');
   const statBg = useColorModeValue('blue.50', 'blue.900');
+  const textColor = useColorModeValue('gray.600', 'gray.400');
+  const cardHighlightBg = useColorModeValue('blue.50', 'blue.900');
   
   // Animation variants
   const containerVariants = {
@@ -170,6 +172,61 @@ export default function StudentDash() {
     return null;
   }
   
+  // Create custom component for rendering subject cards to avoid hook rules violation
+  const SubjectCard = ({ subject, onClick }) => (
+    <MotionCard
+      variants={cardVariants}
+      whileHover="hover"
+      bg={cardBg}
+      borderWidth="1px"
+      borderColor={borderColor}
+      borderRadius="xl"
+      overflow="hidden"
+      h="100%"
+    >
+      <CardHeader bg={cardHighlightBg} p={4}>
+        <Heading size="md">
+          {subject.id}
+        </Heading>
+      </CardHeader>
+                
+      <CardBody py={4}>
+        <VStack align="start" spacing={3}>
+          <HStack>
+            <Icon as={FaChalkboardTeacher} color={highlightColor} />
+            <Text>
+              Class discussions and materials
+            </Text>
+          </HStack>
+                        
+          <HStack>
+            <Icon as={FaComments} color={highlightColor} />
+            <Text>
+              Real-time communication
+            </Text>
+          </HStack>
+        </VStack>
+      </CardBody>
+                
+      <CardFooter 
+        bg={useColorModeValue('gray.50', 'gray.700')} 
+        borderTopWidth="1px"
+        borderColor={borderColor}
+        p={3}
+      >
+        <Button 
+          colorScheme="blue" 
+          size="md" 
+          width="full"
+          leftIcon={<FaBook />}
+          onClick={onClick}
+        >
+          Enter Classroom
+        </Button>
+      </CardFooter>
+    </MotionCard>
+  );
+  
   return (
     <Box minH="100vh" bg={bgColor}>
       <ModernHeader />
@@ -214,7 +271,7 @@ export default function StudentDash() {
                   />
                   <VStack align="flex-start" spacing={0}>
                     <Text fontWeight="bold" fontSize="xl">{studentData.name}</Text>
-                    <Text color={useColorModeValue('gray.600', 'gray.400')}>
+                    <Text color={textColor}>
                       Reg. No: {studentData.regd}
                     </Text>
                   </VStack>
@@ -268,7 +325,7 @@ export default function StudentDash() {
               >
                 Your Subjects
               </Heading>
-              <Text color={useColorModeValue('gray.600', 'gray.400')}>
+              <Text color={textColor}>
                 Semester {studentData.semester?.replace('semester', '') || '-'} • Section {studentData.section || '-'}
               </Text>
             </Box>
@@ -304,58 +361,11 @@ export default function StudentDash() {
             ) : (
               <SimpleGrid columns={{ base: 1, md: 2, xl: 3 }} spacing={6}>
                 {subjectsList.map((subject) => (
-                  <MotionCard
-                    key={subject.id}
-                    variants={cardVariants}
-                    whileHover="hover"
-                    bg={cardBg}
-                    borderWidth="1px"
-                    borderColor={borderColor}
-                    borderRadius="xl"
-                    overflow="hidden"
-                    h="100%"
-                  >
-                    <CardHeader bg={useColorModeValue('blue.50', 'blue.900')} p={4}>
-                      <Heading size="md">
-                        {subject.id}
-                      </Heading>
-                    </CardHeader>
-                    
-                    <CardBody py={4}>
-                      <VStack align="start" spacing={3}>
-                        <HStack>
-                          <Icon as={FaChalkboardTeacher} color={highlightColor} />
-                          <Text>
-                            Class discussions and materials
-                          </Text>
-                        </HStack>
-                        
-                        <HStack>
-                          <Icon as={FaComments} color={highlightColor} />
-                          <Text>
-                            Real-time communication
-                          </Text>
-                        </HStack>
-                      </VStack>
-                    </CardBody>
-                    
-                    <CardFooter 
-                      bg={useColorModeValue('gray.50', 'gray.700')} 
-                      borderTopWidth="1px"
-                      borderColor={borderColor}
-                      p={3}
-                    >
-                      <Button 
-                        colorScheme="blue" 
-                        size="md" 
-                        width="full"
-                        leftIcon={<FaBook />}
-                        onClick={() => handleSubjectSelect(subject.id)}
-                      >
-                        Enter Classroom
-                      </Button>
-                    </CardFooter>
-                  </MotionCard>
+                  <SubjectCard 
+                    key={subject.id} 
+                    subject={subject} 
+                    onClick={() => handleSubjectSelect(subject.id)}
+                  />
                 ))}
               </SimpleGrid>
             )}
