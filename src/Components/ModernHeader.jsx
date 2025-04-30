@@ -29,6 +29,7 @@ import { Context } from '..';
 import { useCookies } from 'react-cookie';
 import { ChevronDownIcon, HamburgerIcon, MoonIcon, SunIcon } from '@chakra-ui/icons';
 import ModernButton from './ModernButton';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const MotionBox = motion(Box);
 
@@ -38,6 +39,8 @@ function ModernHeader() {
   const { colorMode, toggleColorMode } = useColorMode();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const userData = teacherData || studentData;
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const bgColor = useColorModeValue('brand.500', 'gray.800');
   const textColor = useColorModeValue('white', 'white');
@@ -49,6 +52,12 @@ function ModernHeader() {
     setTeacherData("");
     setStudentData("");
     setChatId("");
+    navigate('/');
+  };
+
+  const navigateTo = (path) => {
+    navigate(path);
+    if (isOpen) onClose(); // Close drawer if open (mobile view)
   };
 
   const logoVariants = {
@@ -64,6 +73,7 @@ function ModernHeader() {
     }
   };
 
+  // Define navigation items with paths
   const navItems = [
     { name: 'Dashboard', path: '/lobby' },
     { name: 'Classroom', path: '/classroom' },
@@ -101,6 +111,8 @@ function ModernHeader() {
             variants={logoVariants}
             initial="initial"
             animate="animate"
+            cursor="pointer"
+            onClick={() => navigateTo('/')}
           >
             <Heading 
               color={textColor} 
@@ -132,6 +144,9 @@ function ModernHeader() {
                     transform: 'translateY(-2px)',
                   }}
                   transition="all 0.2s"
+                  onClick={() => navigateTo(item.path)}
+                  borderBottom={location.pathname === item.path ? '2px solid' : 'none'}
+                  pb={1}
                 >
                   {item.name}
                 </Text>
@@ -171,15 +186,15 @@ function ModernHeader() {
                 </HStack>
               </MenuButton>
               <MenuList>
-                <MenuItem>Profile</MenuItem>
-                <MenuItem>Settings</MenuItem>
+                <MenuItem onClick={() => navigateTo(userData.regd ? '/studentdash' : '/teacherdash')}>Profile</MenuItem>
+                <MenuItem onClick={() => navigateTo('/lobby')}>Dashboard</MenuItem>
                 <MenuItem onClick={handleLogout}>Logout</MenuItem>
               </MenuList>
             </Menu>
           )}
 
           {!userData && (
-            <ModernButton colorScheme="accent" onClick={() => {}}>
+            <ModernButton colorScheme="accent" onClick={() => navigateTo('/student')}>
               Login
             </ModernButton>
           )}
@@ -201,19 +216,22 @@ function ModernHeader() {
                   fontWeight="medium"
                   _hover={{ color: 'brand.500' }}
                   cursor="pointer"
+                  onClick={() => navigateTo(item.path)}
                 >
                   {item.name}
                 </Text>
               ))}
-              <Box pt={6}>
-                <ModernButton 
-                  w="full" 
-                  colorScheme="red" 
-                  onClick={handleLogout}
-                >
-                  Logout
-                </ModernButton>
-              </Box>
+              {userData && (
+                <Box pt={6}>
+                  <ModernButton 
+                    w="full" 
+                    colorScheme="red" 
+                    onClick={handleLogout}
+                  >
+                    Logout
+                  </ModernButton>
+                </Box>
+              )}
             </VStack>
           </DrawerBody>
         </DrawerContent>
