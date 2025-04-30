@@ -823,8 +823,7 @@ const joinRoom = () => {
           <VStack spacing={6} align="center">
             <Heading size="lg" textAlign="center">Screen Sharing Not Available</Heading>
             <Text textAlign="center">
-              The screen sharing feature requires a socket.io server. Please contact your administrator
-              to set up the server and provide the URL in the environment variables.
+            socket.io server is disabled for now. Please Contact Admin
             </Text>
             <ModernButton onClick={() => navigate(-1)} colorScheme="blue">
               Go Back
