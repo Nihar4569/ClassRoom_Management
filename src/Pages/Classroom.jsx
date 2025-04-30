@@ -1,48 +1,123 @@
-import { Box, Button, Container, HStack, Input, Menu, MenuButton, MenuItem, MenuList, VStack } from '@chakra-ui/react';
-import React, { useContext, useEffect, useRef, useState } from 'react'
-import { Context } from '..'
-import Message from "../Components/Message";
-import { addDoc, collection, doc, getDoc, getFirestore, onSnapshot, orderBy, query, serverTimestamp } from 'firebase/firestore';
+// File location: src/Pages/ModernClassroom.jsx
+import React, { useContext, useEffect, useRef, useState } from 'react';
+import { 
+  Box, 
+  Container, 
+  Flex, 
+  HStack, 
+  Input, 
+  VStack,
+  IconButton,
+  Text,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  useColorModeValue,
+  InputGroup,
+  InputRightElement,
+  Tooltip,
+  Drawer,
+  DrawerBody,
+  DrawerHeader,
+  DrawerOverlay,
+  DrawerContent,
+  DrawerCloseButton,
+  useDisclosure,
+  Avatar,
+  AvatarGroup,
+  Badge,
+  Heading,
+  Divider
+} from '@chakra-ui/react';
+import { 
+  AttachmentIcon, 
+  ChatIcon, 
+  CheckIcon, 
+  ChevronRightIcon, 
+  CloseIcon, 
+  InfoOutlineIcon, 
+  PlusSquareIcon, 
+  SettingsIcon, 
+  SmallAddIcon 
+} from '@chakra-ui/icons';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Context } from '..';
+//import ModernMessage from '../../BIN/ModernMessage';
+import Message from '../Components/Message';
+import { 
+  addDoc, 
+  collection, 
+  doc, 
+  getDoc, 
+  getFirestore, 
+  onSnapshot, 
+  orderBy, 
+  query, 
+  serverTimestamp 
+} from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { app, storage } from "../firebase";
-import toast from 'react-hot-toast';
-import { useNavigate } from 'react-router-dom';
-import attach from "../Images/attach.png"
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { v4 } from 'uuid';
-import { useCookies } from 'react-cookie';
+import { useNavigate } from 'react-router-dom';
+import ModernHeader from '../Components/ModernHeader';
+import ModernButton from '../Components/ModernButton';
+import { FaFilePdf, FaFileImage, FaFileVideo, FaFileAudio } from 'react-icons/fa';
 
-export default function ClassRoom() {
+const MotionBox = motion(Box);
+const MotionFlex = motion(Flex);
+
+export default function Classroom() {
   // Firebase initialization
   const auth = getAuth(app);
   const db = getFirestore(app);
-
-  const { teacherData, chatId, setChatId, studentData, setStudentData, setTeacherData } = useContext(Context)
-  const [message, setMessage] = useState("");
-  const currentTime = new Date();
-  const formattedTime = currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const navigate = useNavigate();
 
+  // Component state
+  const { teacherData, chatId, setChatId, studentData } = useContext(Context);
+  const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState([]);
+  const [imageUpload, setImageUpload] = useState(null);
+  const [imgurl, setImgurl] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [activeParticipants, setActiveParticipants] = useState([]);
+  const [isMembersPanelOpen, setIsMembersPanelOpen] = useState(false);
+  
+  // Get current user information
+  const user = teacherData || studentData;
+  
+  // Current time formatting
+  const currentTime = new Date();
+  const formattedTime = currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  
+  // Refs for file inputs and scrolling
   const imgInputRef = useRef(null);
   const fileInputRef = useRef(null);
   const vdoInputRef = useRef(null);
+  const audioInputRef = useRef(null);
   const messagesContainerRef = useRef(null);
-  const [messages, setMessages] = useState([]);
-
-  const [imageUpload, setImageUpload] = useState(null);
-  const [imgurl, setImgurl] = useState(null);
-  const user = teacherData || studentData;
-  console.log(user.access);
-
+  const messageInputRef = useRef(null);
+  
+  // Drawer for members panel
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  
+  // Theme colors - Define all useColorModeValue calls at the top level of the component
+  const bgColor = useColorModeValue('gray.50', 'gray.900');
+  const chatAreaBg = useColorModeValue('white', 'gray.800');
+  const inputBg = useColorModeValue('gray.100', 'gray.700');
+  const borderColor = useColorModeValue('gray.200', 'gray.700');
+  const scrollbarTrackBg = "transparent";
+  const scrollbarThumbBg = useColorModeValue("rgba(0,0,0,0.1)", "rgba(255,255,255,0.1)");
+  const scrollbarThumbHoverBg = useColorModeValue("rgba(0,0,0,0.2)", "rgba(255,255,255,0.2)");
+  const hoverBg = useColorModeValue('gray.50', 'gray.700');
+  
+  // Handle sending messages
   const submitHandler = async (e) => {
-    console.log(`This is chat id ${chatId}`);
-    console.log(user.name);
-    if (e) {
-      e.preventDefault();
-    }
+    if (e) e.preventDefault();
+    
     try {
-      if (message || imgurl) {
-        console.log(message);
+      if (message.trim() || imgurl) {
         await addDoc(collection(db, chatId), {
           text: message,
           uid: user.uid,
@@ -52,123 +127,271 @@ export default function ClassRoom() {
           time: formattedTime,
           iurl: imgurl
         });
+        
         setImageUpload(null);
         setImgurl(null);
         setMessage("");
-        messagesContainerRef.current.scrollIntoView({ behavior: "smooth" });
-        toast.success("Message sent");
+        
+        // Scroll to bottom of messages
+        if (messagesContainerRef.current) {
+          messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+        }
       }
     } catch (error) {
-      console.log(error.message);
-      toast.error(error.message);
+      console.error("Error sending message:", error.message);
     }
-  }
-
-  // Image upload function
-  const imgupload = (file) => {
+  };
+  
+  // Handle file uploads
+  const handleFileUpload = (file) => {
+    if (!file) return;
+    
+    setIsUploading(true);
+    
     const imageRef = ref(storage, `${chatId}/${file.name + v4()}`);
-    uploadBytes(imageRef, file).then((snapshot) => {
-      getDownloadURL(snapshot.ref).then((url) => {
+    
+    uploadBytes(imageRef, file)
+      .then((snapshot) => getDownloadURL(snapshot.ref))
+      .then((url) => {
         setImgurl(url);
         setImageUpload(null);
+      })
+      .catch((error) => {
+        console.error("Error uploading file:", error);
+      })
+      .finally(() => {
+        setIsUploading(false);
       });
-    }).catch((error) => {
-      console.error("Error uploading image:", error);
-    });
-  }
-
+  };
+  
+  // Handle Enter key press for message submission
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      submitHandler();
+    }
+  };
+  
+  // Effect to upload image when selected
   useEffect(() => {
     if (imageUpload !== null) {
-      imgupload(imageUpload);
+      handleFileUpload(imageUpload);
     }
   }, [imageUpload]);
-
+  
+  // Effect to send message after image URL is set
   useEffect(() => {
     if (imgurl !== null) {
       submitHandler();
     }
   }, [imgurl]);
-
-  const [cookies, setCookie, removeCookie] = useCookies(['stoken','ttoken']);
-
-  const logoutHandler = ()=>{
-    removeCookie('stoken');
-    removeCookie('ttoken');
-    setStudentData("");
-    setTeacherData("")
-    setChatId("")
-    navigate("/")
-  }
-
+  
+  // Effect to fetch messages and scroll to bottom
   useEffect(() => {
-    if(chatId != "" ){
-      const quer = query(collection(db, chatId), orderBy("createdAt", "asc"));
-    const unsubscribeforMessage = onSnapshot(quer, (snap) => {
-      setMessages(
-        snap.docs.map((item) => {
-          const id = item.id;
-          return { id, ...item.data() };
-        })
-      );
-      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
-    });
-
-    return () => unsubscribeforMessage();
-    }
-    else{
-      if(studentData){
-        navigate("/studentdash")
-      }
-      if(teacherData){
-        navigate("/teacherdash")
-      }
-    }
-  }, [chatId, db, navigate,]);
-
-  let access = false;
-  console.log(messages.uid);
-  if (user.access) {
-    access = true;
-    console.log(access);
-  }
-
-  useEffect(() => {
-    const fetchData = async () => {
+    if (chatId) {
+      const q = query(collection(db, chatId), orderBy("createdAt", "asc"));
+      
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const newMessages = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        
+        setMessages(newMessages);
+        
+        // Create a unique list of active participants
+        const participants = [];
+        const uniqueIds = new Set();
+        
+        newMessages.forEach(msg => {
+          if (!uniqueIds.has(msg.uid)) {
+            uniqueIds.add(msg.uid);
+            participants.push({
+              uid: msg.uid,
+              name: msg.name
+            });
+          }
+        });
+        
+        setActiveParticipants(participants);
+        
+        // Scroll to bottom after messages update
+        setTimeout(() => {
+          if (messagesContainerRef.current) {
+            messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+          }
+        }, 100);
+      });
+      
+      return () => unsubscribe();
+    } else {
+      // Redirect if no chatId is available
       if (studentData) {
-        const studentDoc = await getDoc(doc(db, 'STUDENTS', studentData.uid));
-        setStudentData(studentDoc.data());
+        navigate("/studentdash");
+      } else if (teacherData) {
+        navigate("/teacherdash");
+      } else {
+        navigate("/");
       }
-      if (teacherData) {
-        const teacherDoc = await getDoc(doc(db, 'TEACHERS', teacherData.emid));
-        setTeacherData(teacherDoc.data());
-      }
+    }
+  }, [chatId, db, navigate, studentData, teacherData]);
+  
+  // Effect to focus on message input when component mounts
+  useEffect(() => {
+    if (messageInputRef.current) {
+      messageInputRef.current.focus();
+    }
+  }, []);
+  
+  // Get room info from chatId
+  const getRoomInfo = () => {
+    if (!chatId) return { semester: "", section: "", subject: "" };
+    
+    const parts = chatId.split('+');
+    return {
+      semester: parts[0].replace('semester', 'Semester '),
+      section: parts[1].toUpperCase(),
+      subject: parts[2] ? parts[2].toUpperCase() : ""
     };
-
-    fetchData();
-  }, [studentData, teacherData, db,chatId]);
-
+  };
+  
+  const roomInfo = getRoomInfo();
+  
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { 
+      opacity: 1,
+      transition: { 
+        when: "beforeChildren",
+        staggerChildren: 0.1
+      }
+    }
+  };
+  
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: {
+        type: "spring",
+        damping: 12,
+        stiffness: 100
+      }
+    }
+  };
+  
   return (
-    <Box>
-      {chatId ? (
-        <Box bg={"blue.300"}>
-          <Container h={"100vh"} bg={"white"}>
-            <VStack h={"full"}>
+    <Box minH="100vh" bg={bgColor}>
+      <ModernHeader />
+      
+      <Container maxW="container.xl" py={4} px={{ base: 2, md: 4 }} h="calc(100vh - 72px)">
+        <MotionFlex
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          h="full"
+          direction="column"
+        >
+          {/* Classroom info bar */}
+          <MotionBox
+            variants={itemVariants}
+            bg={chatAreaBg}
+            p={4}
+            borderRadius="lg"
+            boxShadow="sm"
+            mb={4}
+          >
+            <Flex justify="space-between" align="center">
               <HStack>
-                {/* <Button onClick={logoutHandler} borderRadius={"25px"} colorScheme={"red"} w={"full"}>
-                  Logout
-                </Button> */}
-                <Button onClick={()=>{setChatId("");}} borderRadius={"25px"} colorScheme={"green"} w={"full"}>Switch Room</Button>
+                <Text fontSize="xl" fontWeight="bold">
+                  {roomInfo.subject}
+                </Text>
+                <Badge colorScheme="blue" fontSize="sm">
+                  {roomInfo.semester} {roomInfo.section}
+                </Badge>
               </HStack>
-              <VStack h="full" w="full" overflowY="auto" css={{
-                "&::-webkit-scrollbar": {
-                  display: "none"
-                }
-              }}>
+              
+              <HStack>
+                <Tooltip label="Switch Room">
+                  <IconButton
+                    icon={<SettingsIcon />}
+                    variant="ghost"
+                    onClick={() => setChatId("")}
+                    aria-label="Switch Room"
+                    colorScheme="brand"
+                  />
+                </Tooltip>
+                
+                <Tooltip label="View Participants">
+                  <IconButton
+                    icon={<InfoOutlineIcon />}
+                    variant="ghost"
+                    onClick={onOpen}
+                    aria-label="View Participants"
+                    colorScheme="brand"
+                  />
+                </Tooltip>
+                
+                <AvatarGroup size="sm" max={3}>
+                  {activeParticipants.slice(0, 4).map((participant, index) => (
+                    <Avatar 
+                      key={index} 
+                      name={participant.name} 
+                    />
+                  ))}
+                </AvatarGroup>
+              </HStack>
+            </Flex>
+          </MotionBox>
+          
+          {/* Messages area */}
+          <MotionBox
+            variants={itemVariants}
+            flex="1"
+            overflowY="auto"
+            bg={chatAreaBg}
+            borderRadius="lg"
+            boxShadow="sm"
+            mb={4}
+            p={4}
+            ref={messagesContainerRef}
+            css={{
+              "&::-webkit-scrollbar": {
+                width: "8px",
+              },
+              "&::-webkit-scrollbar-track": {
+                background: scrollbarTrackBg,
+              },
+              "&::-webkit-scrollbar-thumb": {
+                background: scrollbarThumbBg,
+                borderRadius: "4px",
+              },
+              "&::-webkit-scrollbar-thumb:hover": {
+                background: scrollbarThumbHoverBg,
+              },
+            }}
+          >
+            {messages.length === 0 ? (
+              <Flex 
+                h="full" 
+                align="center" 
+                justify="center" 
+                direction="column"
+                opacity={0.6}
+              >
+                <ChatIcon boxSize={12} mb={4} />
+                <Text fontSize="lg">No messages yet</Text>
+                <Text fontSize="sm">Be the first to send a message!</Text>
+              </Flex>
+            ) : (
+              <VStack spacing={4} align="stretch">
                 {messages.map((item) => (
                   <Message
                     key={item.id}
-                    uid={item.uid}
                     message_id={item.id}
+                    uid={item.uid}
                     user={item.uid === user.uid ? "me" : "other"}
                     text={item.text}
                     url={item.url}
@@ -178,34 +401,182 @@ export default function ClassRoom() {
                     access={user.access}
                   />
                 ))}
-                <div ref={messagesContainerRef} />
               </VStack>
-              <form onSubmit={submitHandler} style={{ width: "100%" }}>
-                <HStack>
-                  <Input borderRadius={"25px"} value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Enter a Message" flex="1" />
-                  <Menu>
-                    <MenuButton borderRadius={"25px"} as={Button}>
-                      <img src={attach} alt="Attach" />
-                    </MenuButton>
-                    <MenuList>
-                      <MenuItem onClick={() => imgInputRef.current.click()}>Images</MenuItem>
-                      <input ref={imgInputRef} id="file-upload" type="file" style={{ display: "none" }} accept="image/*" onChange={(event) => setImageUpload(event.target.files[0])} />
-                      <MenuItem onClick={() => vdoInputRef.current.click()}>Videos
-                        <input ref={vdoInputRef} id="file-upload" type="file" style={{ display: "none" }} accept="video/*" onChange={(event) => setImageUpload(event.target.files[0])} />
-                      </MenuItem>
-                      <MenuItem onClick={() => fileInputRef.current.click()}>Attach File
-                        <input ref={fileInputRef} id="file-upload" type="file" style={{ display: "none" }} onChange={(event) => setImageUpload(event.target.files[0])} />
-                      </MenuItem>
-                    </MenuList>
-                  </Menu>
-                  <Button borderRadius={"25px"} _hover={{ backgroundColor: "purple.100" }} type="submit">Send</Button>
+            )}
+          </MotionBox>
+          
+          {/* Message input area */}
+          <MotionBox
+            variants={itemVariants}
+            as="form"
+            onSubmit={submitHandler}
+          >
+            <Flex 
+              bg={chatAreaBg}
+              p={4}
+              borderRadius="lg"
+              boxShadow="sm"
+            >
+              <InputGroup size="md">
+                <Input
+                  ref={messageInputRef}
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Type your message..."
+                  bg={inputBg}
+                  borderWidth={1}
+                  borderColor={borderColor}
+                  borderRadius="full"
+                  pr="4.5rem"
+                  fontSize="md"
+                  h="50px"
+                />
+                <InputRightElement width="4.5rem" h="full">
+                  <HStack spacing={1} pr={1}>
+                    <Menu placement="top">
+                      <MenuButton
+                        as={IconButton}
+                        icon={<AttachmentIcon />}
+                        variant="ghost"
+                        size="sm"
+                        isDisabled={isUploading}
+                        aria-label="Attach files"
+                      />
+                      <MenuList>
+                        <MenuItem 
+                          icon={<FaFileImage />} 
+                          onClick={() => imgInputRef.current.click()}
+                        >
+                          Image
+                        </MenuItem>
+                        <input
+                          ref={imgInputRef}
+                          type="file"
+                          accept="image/*"
+                          style={{ display: "none" }}
+                          onChange={(e) => setImageUpload(e.target.files[0])}
+                        />
+                        
+                        <MenuItem 
+                          icon={<FaFileVideo />} 
+                          onClick={() => vdoInputRef.current.click()}
+                        >
+                          Video
+                        </MenuItem>
+                        <input
+                          ref={vdoInputRef}
+                          type="file"
+                          accept="video/*"
+                          style={{ display: "none" }}
+                          onChange={(e) => setImageUpload(e.target.files[0])}
+                        />
+                        
+                        <MenuItem 
+                          icon={<FaFileAudio />} 
+                          onClick={() => audioInputRef.current.click()}
+                        >
+                          Audio
+                        </MenuItem>
+                        <input
+                          ref={audioInputRef}
+                          type="file"
+                          accept="audio/*"
+                          style={{ display: "none" }}
+                          onChange={(e) => setImageUpload(e.target.files[0])}
+                        />
+                        
+                        <MenuItem 
+                          icon={<FaFilePdf />} 
+                          onClick={() => fileInputRef.current.click()}
+                        >
+                          Document
+                        </MenuItem>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          style={{ display: "none" }}
+                          onChange={(e) => setImageUpload(e.target.files[0])}
+                        />
+                      </MenuList>
+                    </Menu>
+                    
+                    <IconButton
+                      icon={<ChevronRightIcon />}
+                      colorScheme="brand"
+                      variant="ghost"
+                      borderRadius="full"
+                      size="sm"
+                      type="submit"
+                      isLoading={isUploading}
+                      aria-label="Send message"
+                    />
+                  </HStack>
+                </InputRightElement>
+              </InputGroup>
+            </Flex>
+          </MotionBox>
+        </MotionFlex>
+      </Container>
+      
+      {/* Members drawer */}
+      <Drawer isOpen={isOpen} placement="right" onClose={onClose} size="md">
+        <DrawerOverlay />
+        <DrawerContent>
+          <DrawerCloseButton />
+          <DrawerHeader borderBottomWidth="1px">
+            Classroom Participants
+          </DrawerHeader>
+          <DrawerBody>
+            <VStack align="stretch" spacing={4}>
+              <Box>
+                <Heading size="sm" mb={2} color="brand.500">
+                  Class Details
+                </Heading>
+                <HStack spacing={2} mb={1}>
+                  <Text fontWeight="bold">Subject:</Text>
+                  <Text>{roomInfo.subject}</Text>
                 </HStack>
-              </form>
+                <HStack spacing={2} mb={1}>
+                  <Text fontWeight="bold">Semester:</Text>
+                  <Text>{roomInfo.semester}</Text>
+                </HStack>
+                <HStack spacing={2}>
+                  <Text fontWeight="bold">Section:</Text>
+                  <Text>{roomInfo.section}</Text>
+                </HStack>
+              </Box>
+              
+              <Divider />
+              
+              <Box>
+                <Heading size="sm" mb={4} color="brand.500">
+                  Active Participants ({activeParticipants.length})
+                </Heading>
+                <VStack align="stretch" spacing={2}>
+                  {activeParticipants.map((participant, index) => (
+                    <HStack 
+                      key={index} 
+                      p={2} 
+                      borderRadius="md"
+                      _hover={{ bg: hoverBg }}
+                    >
+                      <Avatar size="sm" name={participant.name} />
+                      <Text>{participant.name}</Text>
+                      {participant.uid === user.uid && (
+                        <Badge colorScheme="green" ml="auto">You</Badge>
+                      )}
+                      {teacherData && teacherData.uid === participant.uid && (
+                        <Badge colorScheme="purple" ml="auto">Teacher</Badge>
+                      )}
+                    </HStack>
+                  ))}
+                </VStack>
+              </Box>
             </VStack>
-          </Container>
-        </Box>
-      ) : teacherData ? (navigate("/teacherdash")) : studentData ? (navigate("/studentdash")) : navigate("/")
-      }
+          </DrawerBody>
+        </DrawerContent>
+      </Drawer>
     </Box>
-  )
+  );
 }
